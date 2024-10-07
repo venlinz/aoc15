@@ -1,0 +1,47 @@
+(require "utils" "../utils/utils.lisp")
+
+(defvar *input* (utils:read-lines "./input.txt"))
+
+(defstruct house x y)
+(defstruct santa name x y delivered-locations)
+
+(defun update-santa-location-history(santa dir)
+    (if (eql dir #\^) (incf (santa-y santa)))
+    (if (eql dir #\v) (decf (santa-y santa)))
+    (if (eql dir #\<) (decf (santa-x santa)))
+    (if (eql dir #\>) (incf (santa-x santa)))
+    (setq house (make-house :x (santa-x santa) :y (santa-y santa)))
+    (setf (gethash house (santa-delivered-locations santa)) house)
+  )
+
+(defun part1(input)
+  (setf santa (make-santa :name "Santa" :x 0 :y 0 :delivered-locations (make-hash-table :test #'equalp)))
+  (dotimes (pos (length input))
+    (setq dir (elt input pos))
+    (update-santa-location-history santa dir)
+    )
+  (format t "houses receive at least one present delivered by one santas: ~a~%" (hash-table-count (santa-delivered-locations santa)))
+  )
+
+(defun union-hash-map(hm1 hm2)
+  (setf final-union-hm (make-hash-table :test #'equalp))
+  (maphash #'(lambda (key val) (setf (gethash key final-union-hm) val)) hm1)
+  (maphash #'(lambda (key val) (setf (gethash key final-union-hm) val)) hm2)
+  final-union-hm
+  )
+
+(defun part2(input)
+  (setf first-santa (make-santa :name "First Santa" :x 0 :y 0 :delivered-locations (make-hash-table :test #'equalp)))
+  (setf second-santa (make-santa :name "Second Santa" :x 0 :y 0 :delivered-locations (make-hash-table :test #'equalp)))
+  (dotimes (pos (length input))
+    (setq dir (elt input pos))
+    (if (not (= (mod pos 2) 0))
+      (update-santa-location-history first-santa dir)
+      (update-santa-location-history second-santa dir)
+      )
+    )
+  (format t "houses receive at least one present delivered by two santas: ~a~%" (hash-table-count (union-hash-map (santa-delivered-locations first-santa) (santa-delivered-locations second-santa))))
+  )
+
+(part1 (car *input*))
+(part2 (car *input*))
